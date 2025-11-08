@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>React Cơ Bản (CRUD) - Demo</title>
+    <!-- Thiết lập cấu trúc React cơ bản qua CDN -->
+    <!-- Dùng CDN cho React, ReactDOM và Babel để có thể viết JSX trực tiếp trong file HTML này -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+            margin: 24px;
+            background: #f7f7f7;
+        }
+
+        .container {
+            max-width: 920px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            margin-top: 0;
+        }
+
+        .row {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            flex: 1 1 360px;
+            background: #fafafa;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        button {
+            padding: 10px 14px;
+            border: 0;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-ghost {
+            background: #e5e7eb;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .list {
+            margin-top: 12px;
+        }
+
+        .item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+        }
+
+        .item+.item {
+            margin-top: 8px;
+        }
+
+        .muted {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 8px;
+        }
+
+        .heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .kbd {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            background: #111;
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Tạo điểm mount cho React -->
+    <div id="root"></div>
+
+    <!-- Viết mã React với JSX (dùng Babel để chuyển JSX sang JS thuần) -->
+    <script type="text/babel">
+
+
+        const uid = () => Math.random().toString(36).slice(2, 9);
+
+        // Component: UserForm (Con)
+        function UserForm({ onCreate, onUpdate, editingUser, onCancelEdit }) {
+            const [name, setName] = React.useState("");
+            const [email, setEmail] = React.useState("");
+
+            // Khi editingUser thay đổi, đồng bộ giá trị vào form
+            React.useEffect(() => {
+                if (editingUser) {
+                    setName(editingUser.name);
+                    setEmail(editingUser.email);
+                } else {
+                    setName("");
+                    setEmail("");
+                }
+            }, [editingUser]);
+
+            // Hàm xử lý submit form
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (!name.trim() || !email.trim()) return;
+
+                // Nếu đang sửa thì gọi onUpdate, ngược lại gọi onCreate
+                if (editingUser) {
+                    onUpdate({ ...editingUser, name: name.trim(), email: email.trim() });
+                } else {
+                    onCreate({ id: uid(), name: name.trim(), email: email.trim(), createdAt: Date.now() });
+                }
+
+                // Reset form sau khi submit
+                setName("");
+                setEmail("");
+            };
+
+            return (
+                <div className="card">
+                    <div className="heading">
+                        <h2>{editingUser ? "Sửa người dùng" : "Thêm người dùng"}</h2>
+                        <span className="muted">{editingUser ? "Đang sửa bản ghi hiện tại" : "Chế độ thêm mới"}</span>
+                    </div>
+
+                    <form onSubmit={handleSubmit}>
+                        <div style={{ marginBottom: 12 }}>
+                            <label htmlFor="name">Họ & Tên</label>
+                            <input
+                                id="name"
+                                placeholder="Ví dụ: Nguyễn Tuấn Anh"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                            />
+                        </div>
+
+                        <div style={{ marginBottom: 12 }}>
+                            <label htmlFor="email">Email</label>
+                            <input
+                                id="email"
+                                placeholder="ví dụ: name@email.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="toolbar">
+                            <button type="submit" className="btn-primary">
+                                {editingUser ? "Cập nhật" : "Thêm"}
+                            </button>
+                            {editingUser && (
+                                <button type="button" className="btn-ghost" onClick={onCancelEdit}>
+                                    Hủy sửa
+                                </button>
+                            )}
+                        </div>
+                    </form>
+                    <p className="muted" style={{ marginTop: 12 }}>
+                        Mẹo: Nhấn <span className="kbd">Enter</span> để lưu nhanh.
+                    </p>
+                </div>
+            );
+        }
+
+        // Component: UserList (Con)
+        function UserList({ users, onEdit, onDelete }) {
+            return (
+                <div className="card">
+                    <div className="heading">
+                        <h2>Danh sách người dùng</h2>
+                        <span className="muted">{users.length} người dùng</span>
+                    </div>
+                    <div className="list">
+                        {users.length === 0 ? (
+                            <p className="muted">Chưa có dữ liệu. Thêm người dùng ở khung bên cạnh.</p>
+                        ) : (
+                            users.map((u) => (
+                                <div key={u.id} className="item">
+                                    <div>
+                                        <div><strong>{u.name}</strong></div>
+                                        <div className="muted">{u.email}</div>
+                                    </div>
+                                    <div className="toolbar">
+                                        <button className="btn-ghost" onClick={() => onEdit(u)}>Sửa</button>
+                                        <button className="btn-danger" onClick={() => onDelete(u.id)}>Xoá</button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        // Component: App (Cha)
+        function App() {
+            const [users, setUsers] = React.useState([]);
+            const [editingUser, setEditingUser] = React.useState(null);
+            const [q, setQ] = React.useState("");
+
+            // Khởi tạo dữ liệu và lưu trữ localStorage
+            React.useEffect(() => {
+                const raw = localStorage.getItem("users-demo");
+                if (raw) {
+                    try { setUsers(JSON.parse(raw)); } catch { }
+                } else {
+                    const seed = [
+                        { id: uid(), name: "Nguyễn Tuấn Anh", email: "tuananh@example.com", createdAt: Date.now() - 10000 },
+                        { id: uid(), name: "Trần Minh Khoa", email: "khoa@example.com", createdAt: Date.now() - 5000 },
+                    ];
+                    setUsers(seed);
+                }
+            }, []);
+
+            // Mỗi khi users thay đổi, sync vào localStorage
+            React.useEffect(() => {
+                localStorage.setItem("users-demo", JSON.stringify(users));
+            }, [users]);
+
+            const handleCreate = (user) => {
+                setUsers((prev) => [user, ...prev]);
+                setEditingUser(null);
+            };
+
+            const handleUpdate = (user) => {
+                setUsers((prev) => prev.map((u) => (u.id === user.id ? user : u)));
+                setEditingUser(null);
+            };
+
+            const handleDelete = (id) => {
+                setUsers((prev) => prev.filter((u) => u.id !== id));
+                if (editingUser?.id === id) setEditingUser(null);
+            };
+
+            const startEdit = (user) => setEditingUser(user);
+            const cancelEdit = () => setEditingUser(null);
+
+            const filtered = users.filter((u) => {
+                const s = q.trim().toLowerCase();
+                return !s || u.name.toLowerCase().includes(s) || u.email.toLowerCase().includes(s);
+            });
+
+            return (
+                <div className="container">
+                    <h1>Quản lý người dùng (React CRUD cơ bản)</h1>
+                    <p className="muted">
+                        Sử dụng <strong>Functional Components</strong>, <strong>Hooks</strong> và mô hình <strong>CRUD</strong>.
+                    </p>
+
+                    <div className="row">
+                        <div className="card" style={{ flex: "1 1 100%" }}>
+                            <label htmlFor="search">Tìm nhanh</label>
+                            <input
+                                id="search"
+                                placeholder="Nhập tên hoặc email..."
+                                value={q}
+                                onChange={(e) => setQ(e.target.value)}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="row" style={{ marginTop: 12 }}>
+                        <UserForm
+                            onCreate={handleCreate}
+                            onUpdate={handleUpdate}
+                            editingUser={editingUser}
+                            onCancelEdit={cancelEdit}
+                        />
+                        <UserList users={filtered} onEdit={startEdit} onDelete={handleDelete} />
+                    </div>
+                </div>
+            );
+        }
+
+        // Render App vào #root bằng ReactDOM.createRoot
+        const root = ReactDOM.createRoot(document.getElementById("root"));
+        root.render(<App />);
+    </script>
+</body>
+
+</html>
